@@ -12,15 +12,35 @@ namespace Calculator2026
 {
     public partial class FormMain : Form
     {
-        private char[,] buttons =
+        static private Color OPERATION_BG = Color.LightGray;
+        static private Color NUMBER_BG = Color.WhiteSmoke;
+        static private Color EQUAL_BG = Color.LightSeaGreen;
+
+        public struct BtnStruct
         {
-            { '%', '\u0152', 'C', '\u232B' },
-            { '\u215F', '\u00B2', '\u221A', '\u00F7' },
-            { '7', '8', '9', 'x' },
-            { '4', '5', '6', '-' },
-            { '1', '2', '3', '+' },
-            { '\u00B1', '0', ',', '=' }
+            public char Content;
+            public Color BgColor;
+            public BtnStruct(char content, Color bgColor)
+            {
+                this.Content = content;
+                this.BgColor = bgColor;
+            }
+            public override string ToString()
+            {
+                return Content.ToString();
+            }
+        }
+
+        private BtnStruct[,] buttons =
+        {
+            { new BtnStruct('%', OPERATION_BG), new BtnStruct('\u0152', OPERATION_BG), new BtnStruct('C', OPERATION_BG), new BtnStruct('\u232B', OPERATION_BG) },
+            { new BtnStruct('\u215F', OPERATION_BG), new BtnStruct('\u00B2', OPERATION_BG), new BtnStruct('\u221A', OPERATION_BG), new BtnStruct('\u00F7', OPERATION_BG) },
+            { new BtnStruct('7', NUMBER_BG), new BtnStruct('8', NUMBER_BG), new BtnStruct('9', NUMBER_BG), new BtnStruct('x', OPERATION_BG) },
+            { new BtnStruct('4', NUMBER_BG), new BtnStruct('5', NUMBER_BG), new BtnStruct('6', NUMBER_BG), new BtnStruct('-', OPERATION_BG) },
+            { new BtnStruct('1', NUMBER_BG), new BtnStruct('2', NUMBER_BG), new BtnStruct('3', NUMBER_BG), new BtnStruct('+', OPERATION_BG) },
+            { new BtnStruct('\u00B1', NUMBER_BG), new BtnStruct('0', NUMBER_BG), new BtnStruct(',', NUMBER_BG), new BtnStruct('=', EQUAL_BG) }
         };
+
 
         public FormMain()
         {
@@ -48,6 +68,7 @@ namespace Calculator2026
                     btn.Left = posX;
                     btn.Font = new Font("Segoe UI", 16);
                     btn.Text = buttons[i,j].ToString();
+                    btn.BackColor = buttons[i, j].BgColor;
                     Controls.Add(btn);
                     posX += btnWidth;
                 }
