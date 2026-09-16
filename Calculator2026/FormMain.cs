@@ -12,6 +12,8 @@ namespace Calculator2026
 {
     public partial class FormMain : Form
     {
+        private Label resultLabel;
+
         static private Color OPERATION_BG = Color.LightGray;
         static private Color NUMBER_BG = Color.WhiteSmoke;
         static private Color EQUAL_BG = Color.LightSeaGreen;
@@ -49,7 +51,22 @@ namespace Calculator2026
 
         private void FormMain_Load(object sender, EventArgs e)
         {
+            MakeResultLabel();
             MakeButtons();
+        }
+
+        private void MakeResultLabel()
+        {
+            resultLabel = new Label()
+            {
+                Font = new Font("Segoe UI", 22, FontStyle.Bold),
+                TextAlign = ContentAlignment.MiddleRight,
+                AutoSize = false,
+                Location = new Point(0, 0),
+                Size = new Size(this.Width, 100),
+                BackColor = Color.Beige
+            };
+            Controls.Add(resultLabel);
         }
 
         private void MakeButtons()
@@ -69,11 +86,17 @@ namespace Calculator2026
                     btn.Font = new Font("Segoe UI", 16);
                     btn.Text = buttons[i,j].ToString();
                     btn.BackColor = buttons[i, j].BgColor;
+                    btn.Click += Btn_Click;
                     Controls.Add(btn);
                     posX += btnWidth;
                 }
                 posY += btnHeight;
             }
+        }
+
+        private void Btn_Click(object sender, EventArgs e)
+        {
+            throw new NotImplementedException();
         }
     }
 }
