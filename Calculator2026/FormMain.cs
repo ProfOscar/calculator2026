@@ -1,11 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Calculator2026
@@ -14,9 +8,9 @@ namespace Calculator2026
     {
         private Label resultLabel;
 
-        static private Color OPERATION_BG = Color.LightGray;
-        static private Color NUMBER_BG = Color.WhiteSmoke;
-        static private Color EQUAL_BG = Color.LightSeaGreen;
+        private static readonly Color OPERATOR_BG = Color.LightGray;
+        private static readonly Color NUMBER_BG = Color.WhiteSmoke;
+        private static readonly Color EQUAL_BG = Color.LightSeaGreen;
 
         public enum SymbolType {
             Number,
@@ -31,12 +25,10 @@ namespace Calculator2026
         public struct BtnStruct
         {
             public char Content;
-            public Color BgColor;
             public SymbolType Type;
-            public BtnStruct(char content, Color bgColor, SymbolType type = SymbolType.Number)
+            public BtnStruct(char content, SymbolType type = SymbolType.Undefined)
             {
                 this.Content = content;
-                this.BgColor = bgColor;
                 this.Type = type;
             }
             public override string ToString()
@@ -45,14 +37,14 @@ namespace Calculator2026
             }
         }
 
-        private BtnStruct[,] buttons =
+        private readonly BtnStruct[,] buttons =
         {
-            { new BtnStruct('%', OPERATION_BG), new BtnStruct('\u0152', OPERATION_BG), new BtnStruct('C', OPERATION_BG), new BtnStruct('\u232B', OPERATION_BG) },
-            { new BtnStruct('\u215F', OPERATION_BG), new BtnStruct('\u00B2', OPERATION_BG), new BtnStruct('\u221A', OPERATION_BG), new BtnStruct('\u00F7', OPERATION_BG) },
-            { new BtnStruct('7', NUMBER_BG), new BtnStruct('8', NUMBER_BG), new BtnStruct('9', NUMBER_BG), new BtnStruct('x', OPERATION_BG) },
-            { new BtnStruct('4', NUMBER_BG), new BtnStruct('5', NUMBER_BG), new BtnStruct('6', NUMBER_BG), new BtnStruct('-', OPERATION_BG) },
-            { new BtnStruct('1', NUMBER_BG), new BtnStruct('2', NUMBER_BG), new BtnStruct('3', NUMBER_BG), new BtnStruct('+', OPERATION_BG) },
-            { new BtnStruct('\u00B1', NUMBER_BG), new BtnStruct('0', NUMBER_BG), new BtnStruct(',', NUMBER_BG), new BtnStruct('=', EQUAL_BG) }
+            { new BtnStruct('%'), new BtnStruct('\u0152'), new BtnStruct('C'), new BtnStruct('\u232B', SymbolType.Backspace) },
+            { new BtnStruct('\u215F'), new BtnStruct('\u00B2'), new BtnStruct('\u221A'), new BtnStruct('\u00F7', SymbolType.Operator) },
+            { new BtnStruct('7', SymbolType.Number), new BtnStruct('8', SymbolType.Number), new BtnStruct('9', SymbolType.Number), new BtnStruct('x', SymbolType.Operator) },
+            { new BtnStruct('4', SymbolType.Number), new BtnStruct('5', SymbolType.Number), new BtnStruct('6', SymbolType.Number), new BtnStruct('-', SymbolType.Operator) },
+            { new BtnStruct('1', SymbolType.Number), new BtnStruct('2', SymbolType.Number), new BtnStruct('3', SymbolType.Number), new BtnStruct('+', SymbolType.Operator) },
+            { new BtnStruct('\u00B1', SymbolType.PlusMinusSign), new BtnStruct('0', SymbolType.Number), new BtnStruct(',', SymbolType.DecimalPoint), new BtnStruct('=', SymbolType.EqualSign) }
         };
 
 
@@ -74,9 +66,10 @@ namespace Calculator2026
                 Font = new Font("Segoe UI", 22, FontStyle.Bold),
                 TextAlign = ContentAlignment.MiddleRight,
                 AutoSize = false,
-                Location = new Point(0, 0),
+                Location = new Point(-20, 0),
                 Size = new Size(this.Width, 100),
-                BackColor = Color.Beige
+                BackColor = Color.Beige,
+                Text = "0"
             };
             Controls.Add(resultLabel);
         }
@@ -97,7 +90,22 @@ namespace Calculator2026
                     btn.Left = posX;
                     btn.Font = new Font("Segoe UI", 16);
                     btn.Text = buttons[i,j].ToString();
-                    btn.BackColor = buttons[i, j].BgColor;
+                    switch (buttons[i, j].Type)
+                    {
+                        case SymbolType.Number:
+                        case SymbolType.DecimalPoint:
+                        case SymbolType.PlusMinusSign:
+                            btn.BackColor = NUMBER_BG;
+                            break;
+                        case SymbolType.Operator:
+                        case SymbolType.Backspace:
+                        case SymbolType.Undefined:
+                            btn.BackColor = OPERATOR_BG;
+                            break;
+                        case SymbolType.EqualSign:
+                            btn.BackColor = EQUAL_BG;
+                            break;
+                    }
                     btn.Tag = buttons[i, j];
                     btn.Click += Btn_Click;
                     Controls.Add(btn);
@@ -111,9 +119,30 @@ namespace Calculator2026
         {
             Button clickedButton = (Button)sender;
             BtnStruct clickedButtonStruct = (BtnStruct)clickedButton.Tag;
-            if (clickedButtonStruct.Type == SymbolType.Number)
+            switch (clickedButtonStruct.Type)
             {
-                resultLabel.Text += clickedButton.Text;
+                case SymbolType.Number:
+                    if (resultLabel.Text == "0") resultLabel.Text = "";
+                    resultLabel.Text += clickedButtonStruct.Content;
+                    break;
+                case SymbolType.Operator:
+                    break;
+                case SymbolType.EqualSign:
+                    break;
+                case SymbolType.DecimalPoint:
+                    if (!resultLabel.Text.Contains(","))
+                        resultLabel.Text += clickedButtonStruct.Content;
+                    break;
+                case SymbolType.PlusMinusSign:
+                    if (!resultLabel.Text.Contains("-"))
+                        resultLabel.Text = "-" + resultLabel.Text;
+                    break;
+                case SymbolType.Backspace:
+                    break;
+                case SymbolType.Undefined:
+                    break;
+                default:
+                    break;
             }
         }
     }
