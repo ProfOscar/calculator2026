@@ -18,16 +18,26 @@ namespace Calculator2026
         static private Color NUMBER_BG = Color.WhiteSmoke;
         static private Color EQUAL_BG = Color.LightSeaGreen;
 
+        public enum SymbolType {
+            Number,
+            Operator,
+            EqualSign,
+            DecimalPoint,
+            PlusMinusSign,
+            Backspace,
+            Undefined
+        }
+
         public struct BtnStruct
         {
             public char Content;
             public Color BgColor;
-            public bool IsNumber;
-            public BtnStruct(char content, Color bgColor, bool isNumber = false)
+            public SymbolType Type;
+            public BtnStruct(char content, Color bgColor, SymbolType type = SymbolType.Number)
             {
                 this.Content = content;
                 this.BgColor = bgColor;
-                this.IsNumber = isNumber;
+                this.Type = type;
             }
             public override string ToString()
             {
@@ -39,10 +49,10 @@ namespace Calculator2026
         {
             { new BtnStruct('%', OPERATION_BG), new BtnStruct('\u0152', OPERATION_BG), new BtnStruct('C', OPERATION_BG), new BtnStruct('\u232B', OPERATION_BG) },
             { new BtnStruct('\u215F', OPERATION_BG), new BtnStruct('\u00B2', OPERATION_BG), new BtnStruct('\u221A', OPERATION_BG), new BtnStruct('\u00F7', OPERATION_BG) },
-            { new BtnStruct('7', NUMBER_BG, true), new BtnStruct('8', NUMBER_BG, true), new BtnStruct('9', NUMBER_BG, true), new BtnStruct('x', OPERATION_BG) },
-            { new BtnStruct('4', NUMBER_BG, true), new BtnStruct('5', NUMBER_BG, true), new BtnStruct('6', NUMBER_BG, true), new BtnStruct('-', OPERATION_BG) },
-            { new BtnStruct('1', NUMBER_BG, true), new BtnStruct('2', NUMBER_BG, true), new BtnStruct('3', NUMBER_BG, true), new BtnStruct('+', OPERATION_BG) },
-            { new BtnStruct('\u00B1', NUMBER_BG), new BtnStruct('0', NUMBER_BG, true), new BtnStruct(',', NUMBER_BG), new BtnStruct('=', EQUAL_BG) }
+            { new BtnStruct('7', NUMBER_BG), new BtnStruct('8', NUMBER_BG), new BtnStruct('9', NUMBER_BG), new BtnStruct('x', OPERATION_BG) },
+            { new BtnStruct('4', NUMBER_BG), new BtnStruct('5', NUMBER_BG), new BtnStruct('6', NUMBER_BG), new BtnStruct('-', OPERATION_BG) },
+            { new BtnStruct('1', NUMBER_BG), new BtnStruct('2', NUMBER_BG), new BtnStruct('3', NUMBER_BG), new BtnStruct('+', OPERATION_BG) },
+            { new BtnStruct('\u00B1', NUMBER_BG), new BtnStruct('0', NUMBER_BG), new BtnStruct(',', NUMBER_BG), new BtnStruct('=', EQUAL_BG) }
         };
 
 
@@ -101,7 +111,7 @@ namespace Calculator2026
         {
             Button clickedButton = (Button)sender;
             BtnStruct clickedButtonStruct = (BtnStruct)clickedButton.Tag;
-            if (clickedButtonStruct.IsNumber)
+            if (clickedButtonStruct.Type == SymbolType.Number)
             {
                 resultLabel.Text += clickedButton.Text;
             }
