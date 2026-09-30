@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Globalization;
 using System.Windows.Forms;
 
 namespace Calculator2026
@@ -79,8 +80,24 @@ namespace Calculator2026
 
         private void ResultLabel_TextChanged(object sender, EventArgs e)
         {
+            if (resultLabel.Text.Length > 0)
+            {
+                decimal num = decimal.Parse(resultLabel.Text);
+                NumberFormatInfo nfi = new CultureInfo("it-IT", false).NumberFormat;
+                int decimalSeparatorPosition = resultLabel.Text.IndexOf(',');
+                if (decimalSeparatorPosition == -1)
+                    nfi.NumberDecimalDigits = 0;
+                else
+                    nfi.NumberDecimalDigits = resultLabel.Text.Length - decimalSeparatorPosition - 1;
+                string stOut = num.ToString("N", nfi);
+                if (decimalSeparatorPosition == resultLabel.Text.Length - 1)
+                    stOut += ",";
+                resultLabel.Text = stOut;
+            }
+
             if (resultLabel.Text.Length > 16)
                 resultLabel.Text = resultLabel.Text.Substring(0, 16);
+
             if (resultLabel.Text.Length > 11)
             {
                 float delta = (resultLabel.Text.Length - 11) * (float)2.8;
