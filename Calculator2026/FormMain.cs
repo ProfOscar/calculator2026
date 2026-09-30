@@ -13,6 +13,10 @@ namespace Calculator2026
         private static readonly Color NUMBER_BG = Color.WhiteSmoke;
         private static readonly Color EQUAL_BG = Color.LightSeaGreen;
 
+        decimal operand1, operand2, result;
+        char lastOperator = ' ';
+        BtnStruct lastBtnStruct;
+
         public enum SymbolType {
             Number,
             Operator,
@@ -159,10 +163,12 @@ namespace Calculator2026
             switch (clickedButtonStruct.Type)
             {
                 case SymbolType.Number:
-                    if (resultLabel.Text == "0") resultLabel.Text = "";
+                    if (resultLabel.Text == "0" || lastBtnStruct.Type == SymbolType.Operator) 
+                        resultLabel.Text = "";
                     resultLabel.Text += clickedButtonStruct.Content;
                     break;
                 case SymbolType.Operator:
+                    ManageOperator(clickedButtonStruct);
                     break;
                 case SymbolType.EqualSign:
                     break;
@@ -190,6 +196,42 @@ namespace Calculator2026
                 default:
                     break;
             }
+            lastBtnStruct = clickedButtonStruct;
+        }
+
+        private void ManageOperator(BtnStruct clickedButtonStruct)
+        {
+            if (lastOperator == ' ')
+            {
+                // non ho in coda alcuna operazione
+                operand1 = decimal.Parse(resultLabel.Text);
+            }
+            else
+            {
+                // devo svolgere l'operazione che ho in coda
+                operand2 = decimal.Parse(resultLabel.Text);
+                switch (lastOperator)
+                {
+                    case '+':
+                        result = operand1 + operand2;
+                        break;
+                    case '-':
+                        result = operand1 - operand2;
+                        break;
+                    case 'x':
+                        result = operand1 * operand2;
+                        break;
+                    case '\u00F7':
+                        if (operand2 != 0)
+                        {
+                            result = operand1 / operand2;
+                        }
+                        break;
+                }
+                resultLabel.Text = result.ToString();
+                operand1 = result;
+            }
+            lastOperator = clickedButtonStruct.Content;
         }
     }
 }
