@@ -19,6 +19,8 @@ namespace Calculator2026
             DecimalPoint,
             PlusMinusSign,
             Backspace,
+            ClearEntry,
+            ClearAll,
             Undefined
         }
 
@@ -39,7 +41,7 @@ namespace Calculator2026
 
         private readonly BtnStruct[,] buttons =
         {
-            { new BtnStruct('%'), new BtnStruct('\u0152'), new BtnStruct('C'), new BtnStruct('\u232B', SymbolType.Backspace) },
+            { new BtnStruct('%'), new BtnStruct('\u0152', SymbolType.ClearEntry), new BtnStruct('C', SymbolType.ClearAll), new BtnStruct('\u232B', SymbolType.Backspace) },
             { new BtnStruct('\u215F'), new BtnStruct('\u00B2'), new BtnStruct('\u221A'), new BtnStruct('\u00F7', SymbolType.Operator) },
             { new BtnStruct('7', SymbolType.Number), new BtnStruct('8', SymbolType.Number), new BtnStruct('9', SymbolType.Number), new BtnStruct('x', SymbolType.Operator) },
             { new BtnStruct('4', SymbolType.Number), new BtnStruct('5', SymbolType.Number), new BtnStruct('6', SymbolType.Number), new BtnStruct('-', SymbolType.Operator) },
@@ -99,6 +101,8 @@ namespace Calculator2026
                             break;
                         case SymbolType.Operator:
                         case SymbolType.Backspace:
+                        case SymbolType.ClearEntry:
+                        case SymbolType.ClearAll:
                         case SymbolType.Undefined:
                             btn.BackColor = OPERATOR_BG;
                             break;
@@ -136,8 +140,17 @@ namespace Calculator2026
                 case SymbolType.PlusMinusSign:
                     if (!resultLabel.Text.Contains("-"))
                         resultLabel.Text = "-" + resultLabel.Text;
+                    else
+                        resultLabel.Text = resultLabel.Text.Substring(1);
                     break;
                 case SymbolType.Backspace:
+                    resultLabel.Text = resultLabel.Text.Substring(0, resultLabel.Text.Length - 1);
+                    if (resultLabel.Text == "" || resultLabel.Text == "-" || resultLabel.Text == "-0")
+                        resultLabel.Text = "0";
+                    break;
+                case SymbolType.ClearEntry:
+                case SymbolType.ClearAll:
+                    resultLabel.Text = "0";
                     break;
                 case SymbolType.Undefined:
                     break;
