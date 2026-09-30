@@ -65,7 +65,7 @@ namespace Calculator2026
         {
             resultLabel = new Label()
             {
-                Font = new Font("Segoe UI", 22, FontStyle.Bold),
+                Font = new Font("Segoe UI", 34, FontStyle.Bold),
                 TextAlign = ContentAlignment.MiddleRight,
                 AutoSize = false,
                 Location = new Point(-20, 0),
@@ -73,7 +73,23 @@ namespace Calculator2026
                 BackColor = Color.Beige,
                 Text = "0"
             };
+            resultLabel.TextChanged += ResultLabel_TextChanged;
             Controls.Add(resultLabel);
+        }
+
+        private void ResultLabel_TextChanged(object sender, EventArgs e)
+        {
+            if (resultLabel.Text.Length > 16)
+                resultLabel.Text = resultLabel.Text.Substring(0, 16);
+            if (resultLabel.Text.Length > 11)
+            {
+                float delta = (resultLabel.Text.Length - 11) * (float)2.8;
+                resultLabel.Font = new Font("Segoe UI", 34 - delta, FontStyle.Bold);
+            }
+            else
+            {
+                resultLabel.Font = new Font("Segoe UI", 34, FontStyle.Bold);
+            }
         }
 
         private void MakeButtons()
