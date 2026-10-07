@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Globalization;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Calculator2026
@@ -189,6 +190,7 @@ namespace Calculator2026
                     ManageOperator(clickedButtonStruct);
                     break;
                 case SymbolType.EqualSign:
+                    ManageOperator(clickedButtonStruct);
                     break;
                 case SymbolType.DecimalPoint:
                     if (!resultLabel.Text.Contains(","))
@@ -225,15 +227,9 @@ namespace Calculator2026
             lastBtnStruct = clickedButtonStruct;
         }
 
-        private void ManageOperator(BtnStruct clickedButtonStruct)
+        private async Task ManageOperator(BtnStruct clickedButtonStruct)
         {
-            //if (lastBtnStruct.Type == SymbolType.Operator && clickedButtonStruct.Content == lastOperator)
-            //    // sto continuando a schiacciare lo stesso operatore, quindi lo ignoro
-            //    return;
-            //else if (lastBtnStruct.Type == SymbolType.Operator)
-            //    // sto cambiando operatore
-            //    lastOperator = clickedButtonStruct.Content;
-            //else
+            decimal lastOperand1 = operand1;
             if (lastBtnStruct.Type != SymbolType.Operator)
             {
                 if (lastOperator == ' ')
@@ -243,32 +239,49 @@ namespace Calculator2026
                 }
                 else
                 {
-                    // devo svolgere l'operazione che ho in coda
-                    operand2 = decimal.Parse(resultLabel.Text);
-                    switch (lastOperator)
+                    if (clickedButtonStruct.Type != SymbolType.EqualSign || lastBtnStruct.Type != SymbolType.EqualSign)
+                        operand2 = decimal.Parse(resultLabel.Text);
+                    if (!(clickedButtonStruct.Type == SymbolType.Operator && lastBtnStruct.Type == SymbolType.EqualSign))
                     {
-                        case '+':
-                            result = operand1 + operand2;
-                            break;
-                        case '-':
-                            result = operand1 - operand2;
-                            break;
-                        case 'x':
-                            result = operand1 * operand2;
-                            break;
-                        case '\u00F7':
-                            if (operand2 != 0)
-                            {
+                        // non schiaccio operator subito dopo aver schiacciato uguale
+                        // devo svolgere l'operazione che ho in coda
+                        switch (lastOperator)
+                        {
+                            case '+':
+                                result = operand1 + operand2;
+                                break;
+                            case '-':
+                                result = operand1 - operand2;
+                                break;
+                            case 'x':
+                                result = operand1 * operand2;
+                                break;
+                            case '\u00F7':
+                                if (operand2 == 0)
+                                {
+                                    string st = infoLabel.Text;
+                                    infoLabel.Text = "Impossibile dividere per 0";
+                                    await Task.Delay(2000); // attesa di 2 secondi
+                                    infoLabel.Text = st;
+                                    return;
+                                }
                                 result = operand1 / operand2;
-                            }
-                            break;
+                                break;
+                        }
                     }
                     operand1 = result;
                     resultLabel.Text = result.ToString();
                 }
             }
-            lastOperator = clickedButtonStruct.Content;
-            infoLabel.Text = $"{operand1} {lastOperator}";
+            if (clickedButtonStruct.Type == SymbolType.EqualSign)
+            {
+                infoLabel.Text = $"{lastOperand1} {lastOperator} {operand2} =";
+            }
+            else
+            {
+                lastOperator = clickedButtonStruct.Content;
+                infoLabel.Text = $"{operand1} {lastOperator}";
+            }
         }
     }
 }
