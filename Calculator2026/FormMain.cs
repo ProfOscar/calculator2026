@@ -182,15 +182,15 @@ namespace Calculator2026
             switch (clickedButtonStruct.Type)
             {
                 case SymbolType.Number:
+                    if (lastBtnStruct.Type == SymbolType.EqualSign)
+                        ClearAll();
                     if (resultLabel.Text == "0" || lastBtnStruct.Type == SymbolType.Operator)
                         resultLabel.Text = "";
                     resultLabel.Text += clickedButtonStruct.Content;
                     break;
                 case SymbolType.Operator:
-                    ManageOperator(clickedButtonStruct);
-                    break;
                 case SymbolType.EqualSign:
-                    ManageOperator(clickedButtonStruct);
+                    _ = ManageOperator(clickedButtonStruct);
                     break;
                 case SymbolType.DecimalPoint:
                     if (!resultLabel.Text.Contains(","))
@@ -212,12 +212,7 @@ namespace Calculator2026
                     resultLabel.Text = "0";
                     break;
                 case SymbolType.ClearAll:
-                    operand1 = 0;
-                    operand2 = 0;
-                    result = 0;
-                    lastOperator = ' ';
-                    infoLabel.Text = "";
-                    resultLabel.Text = "0";
+                    ClearAll();
                     break;
                 case SymbolType.Undefined:
                     break;
@@ -225,6 +220,17 @@ namespace Calculator2026
                     break;
             }
             lastBtnStruct = clickedButtonStruct;
+        }
+
+        private void ClearAll()
+        {
+            operand1 = 0;
+            operand2 = 0;
+            result = 0;
+            lastOperator = ' ';
+            infoLabel.Text = "";
+            resultLabel.Text = "0";
+
         }
 
         private async Task ManageOperator(BtnStruct clickedButtonStruct)
