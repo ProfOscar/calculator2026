@@ -7,6 +7,7 @@ namespace Calculator2026
 {
     public partial class FormMain : Form
     {
+        private Label infoLabel;
         private Label resultLabel;
 
         private static readonly Color OPERATOR_BG = Color.LightGray;
@@ -17,7 +18,8 @@ namespace Calculator2026
         char lastOperator = ' ';
         BtnStruct lastBtnStruct;
 
-        public enum SymbolType {
+        public enum SymbolType
+        {
             Number,
             Operator,
             EqualSign,
@@ -62,8 +64,24 @@ namespace Calculator2026
 
         private void FormMain_Load(object sender, EventArgs e)
         {
+            MakeInfoLabel();
             MakeResultLabel();
             MakeButtons();
+        }
+
+        private void MakeInfoLabel()
+        {
+            infoLabel = new Label()
+            {
+                Font = new Font("Segoe UI", 12, FontStyle.Regular),
+                TextAlign = ContentAlignment.MiddleRight,
+                AutoSize = false,
+                Location = new Point(-20, 0),
+                Size = new Size(this.Width, 34),
+                BackColor = Color.Beige,
+                Text = ""
+            };
+            Controls.Add(infoLabel);
         }
 
         private void MakeResultLabel()
@@ -73,8 +91,8 @@ namespace Calculator2026
                 Font = new Font("Segoe UI", 34, FontStyle.Bold),
                 TextAlign = ContentAlignment.MiddleRight,
                 AutoSize = false,
-                Location = new Point(-20, 0),
-                Size = new Size(this.Width, 100),
+                Location = new Point(-20, 34),
+                Size = new Size(this.Width, 66),
                 BackColor = Color.Beige,
                 Text = "0"
             };
@@ -128,7 +146,7 @@ namespace Calculator2026
                     btn.Top = posY;
                     btn.Left = posX;
                     btn.Font = new Font("Segoe UI", 16);
-                    btn.Text = buttons[i,j].ToString();
+                    btn.Text = buttons[i, j].ToString();
                     switch (buttons[i, j].Type)
                     {
                         case SymbolType.Number:
@@ -163,7 +181,7 @@ namespace Calculator2026
             switch (clickedButtonStruct.Type)
             {
                 case SymbolType.Number:
-                    if (resultLabel.Text == "0" || lastBtnStruct.Type == SymbolType.Operator) 
+                    if (resultLabel.Text == "0" || lastBtnStruct.Type == SymbolType.Operator)
                         resultLabel.Text = "";
                     resultLabel.Text += clickedButtonStruct.Content;
                     break;
@@ -188,7 +206,15 @@ namespace Calculator2026
                         resultLabel.Text = "0";
                     break;
                 case SymbolType.ClearEntry:
+                    // operand2 = 0;
+                    resultLabel.Text = "0";
+                    break;
                 case SymbolType.ClearAll:
+                    operand1 = 0;
+                    operand2 = 0;
+                    result = 0;
+                    lastOperator = ' ';
+                    infoLabel.Text = "";
                     resultLabel.Text = "0";
                     break;
                 case SymbolType.Undefined:
@@ -201,37 +227,48 @@ namespace Calculator2026
 
         private void ManageOperator(BtnStruct clickedButtonStruct)
         {
-            if (lastOperator == ' ')
+            //if (lastBtnStruct.Type == SymbolType.Operator && clickedButtonStruct.Content == lastOperator)
+            //    // sto continuando a schiacciare lo stesso operatore, quindi lo ignoro
+            //    return;
+            //else if (lastBtnStruct.Type == SymbolType.Operator)
+            //    // sto cambiando operatore
+            //    lastOperator = clickedButtonStruct.Content;
+            //else
+            if (lastBtnStruct.Type != SymbolType.Operator)
             {
-                // non ho in coda alcuna operazione
-                operand1 = decimal.Parse(resultLabel.Text);
-            }
-            else
-            {
-                // devo svolgere l'operazione che ho in coda
-                operand2 = decimal.Parse(resultLabel.Text);
-                switch (lastOperator)
+                if (lastOperator == ' ')
                 {
-                    case '+':
-                        result = operand1 + operand2;
-                        break;
-                    case '-':
-                        result = operand1 - operand2;
-                        break;
-                    case 'x':
-                        result = operand1 * operand2;
-                        break;
-                    case '\u00F7':
-                        if (operand2 != 0)
-                        {
-                            result = operand1 / operand2;
-                        }
-                        break;
+                    // non ho in coda alcuna operazione
+                    operand1 = decimal.Parse(resultLabel.Text);
                 }
-                resultLabel.Text = result.ToString();
-                operand1 = result;
+                else
+                {
+                    // devo svolgere l'operazione che ho in coda
+                    operand2 = decimal.Parse(resultLabel.Text);
+                    switch (lastOperator)
+                    {
+                        case '+':
+                            result = operand1 + operand2;
+                            break;
+                        case '-':
+                            result = operand1 - operand2;
+                            break;
+                        case 'x':
+                            result = operand1 * operand2;
+                            break;
+                        case '\u00F7':
+                            if (operand2 != 0)
+                            {
+                                result = operand1 / operand2;
+                            }
+                            break;
+                    }
+                    operand1 = result;
+                    resultLabel.Text = result.ToString();
+                }
             }
             lastOperator = clickedButtonStruct.Content;
+            infoLabel.Text = $"{operand1} {lastOperator}";
         }
     }
 }
