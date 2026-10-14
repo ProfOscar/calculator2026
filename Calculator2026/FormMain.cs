@@ -235,7 +235,6 @@ namespace Calculator2026
             lastOperator = ' ';
             infoLabel.Text = "";
             resultLabel.Text = "0";
-
         }
 
         private async Task ManageSpecialOperator(BtnStruct clickedButtonStruct)
@@ -248,6 +247,18 @@ namespace Calculator2026
             switch (clickedButtonStruct.Content)
             {
                 case '%':
+                    switch (lastOperator)
+                    {
+                        case '+':
+                        case '-':
+                            operand2 = (operand1 * operand2) / 100;
+                            break;
+                        case 'x':
+                        case '\u00F7':
+                            operand2 = operand2 / 100;
+                            break;
+                    }
+                    infoLabel.Text += $" {operand2}";
                     break;
                 case '\u215F':
                     // 1 diviso x
