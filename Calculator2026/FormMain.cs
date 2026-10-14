@@ -23,6 +23,7 @@ namespace Calculator2026
         {
             Number,
             Operator,
+            SpecialOperator,
             EqualSign,
             DecimalPoint,
             PlusMinusSign,
@@ -49,8 +50,8 @@ namespace Calculator2026
 
         private readonly BtnStruct[,] buttons =
         {
-            { new BtnStruct('%'), new BtnStruct('\u0152', SymbolType.ClearEntry), new BtnStruct('C', SymbolType.ClearAll), new BtnStruct('\u232B', SymbolType.Backspace) },
-            { new BtnStruct('\u215F'), new BtnStruct('\u00B2'), new BtnStruct('\u221A'), new BtnStruct('\u00F7', SymbolType.Operator) },
+            { new BtnStruct('%', SymbolType.SpecialOperator), new BtnStruct('\u0152', SymbolType.ClearEntry), new BtnStruct('C', SymbolType.ClearAll), new BtnStruct('\u232B', SymbolType.Backspace) },
+            { new BtnStruct('\u215F', SymbolType.SpecialOperator), new BtnStruct('\u00B2', SymbolType.SpecialOperator), new BtnStruct('\u221A', SymbolType.SpecialOperator), new BtnStruct('\u00F7', SymbolType.Operator) },
             { new BtnStruct('7', SymbolType.Number), new BtnStruct('8', SymbolType.Number), new BtnStruct('9', SymbolType.Number), new BtnStruct('x', SymbolType.Operator) },
             { new BtnStruct('4', SymbolType.Number), new BtnStruct('5', SymbolType.Number), new BtnStruct('6', SymbolType.Number), new BtnStruct('-', SymbolType.Operator) },
             { new BtnStruct('1', SymbolType.Number), new BtnStruct('2', SymbolType.Number), new BtnStruct('3', SymbolType.Number), new BtnStruct('+', SymbolType.Operator) },
@@ -156,6 +157,7 @@ namespace Calculator2026
                             btn.BackColor = NUMBER_BG;
                             break;
                         case SymbolType.Operator:
+                        case SymbolType.SpecialOperator:
                         case SymbolType.Backspace:
                         case SymbolType.ClearEntry:
                         case SymbolType.ClearAll:
@@ -191,6 +193,9 @@ namespace Calculator2026
                 case SymbolType.Operator:
                 case SymbolType.EqualSign:
                     _ = ManageOperator(clickedButtonStruct);
+                    break;
+                case SymbolType.SpecialOperator:
+                    _ = ManageSpecialOperator(clickedButtonStruct);
                     break;
                 case SymbolType.DecimalPoint:
                     if (!resultLabel.Text.Contains(","))
@@ -231,6 +236,58 @@ namespace Calculator2026
             infoLabel.Text = "";
             resultLabel.Text = "0";
 
+        }
+
+        private async Task ManageSpecialOperator(BtnStruct clickedButtonStruct)
+        {
+            if (lastOperator == ' ')
+            {
+                infoLabel.Text = "";
+            }
+            operand2 = Decimal.Parse(resultLabel.Text);
+            switch (clickedButtonStruct.Content)
+            {
+                case '%':
+                    break;
+                case '\u215F':
+                    // 1 diviso x
+                    if (operand2 == 0)
+                    {
+                        string st = infoLabel.Text;
+                        infoLabel.Text = "Impossibile dividere per zero";
+                        await Task.Delay(2000); // attesa di 2 secondi
+                        infoLabel.Text = st;
+                        return;
+                    }
+                    else
+                    {
+                        infoLabel.Text += $" 1/{operand2}";
+                        operand2 = 1 / operand2;
+                    }
+                    break;
+                case '\u00B2':
+                    // x quadro
+                    infoLabel.Text += $" sqr({operand2})";
+                    operand2 = operand2 * operand2;
+                    break;
+                case '\u221A':
+                    // radice di x
+                    if (operand2 < 0)
+                    {
+                        string st = infoLabel.Text;
+                        infoLabel.Text = "Input non valido";
+                        await Task.Delay(2000); // attesa di 2 secondi
+                        infoLabel.Text = st;
+                        return;
+                    }
+                    else
+                    {
+                        infoLabel.Text += $" \u221A({operand2})";
+                        operand2 = (decimal)Math.Sqrt((double)operand2);
+                    }
+                    break;
+            }
+            resultLabel.Text = operand2.ToString();
         }
 
         private async Task ManageOperator(BtnStruct clickedButtonStruct)
