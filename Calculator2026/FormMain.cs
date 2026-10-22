@@ -107,7 +107,9 @@ namespace Calculator2026
             if (resultLabel.Text.Length > 0)
             {
                 decimal num = decimal.Parse(resultLabel.Text);
-                NumberFormatInfo nfi = new CultureInfo("it-IT", false).NumberFormat;
+                // la cultura italiana è impostata in Program.cs: ne clono il formato
+                // (Clone serve perché quello della cultura corrente è di sola lettura)
+                NumberFormatInfo nfi = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
                 int decimalSeparatorPosition = resultLabel.Text.IndexOf(',');
                 if (decimalSeparatorPosition == -1)
                     nfi.NumberDecimalDigits = 0;
@@ -116,6 +118,8 @@ namespace Calculator2026
                 string stOut = num.ToString("N", nfi);
                 if (decimalSeparatorPosition == resultLabel.Text.Length - 1)
                     stOut += ",";
+                // questa assegnazione fa scattare di nuovo TextChanged: al secondo giro
+                // il testo è già formattato e non cambia, quindi l'evento non si ripete più
                 resultLabel.Text = stOut;
             }
 
@@ -378,31 +382,31 @@ namespace Calculator2026
                                 case 'x':
                                     result = operand1 * operand2;
                                     break;
-                                            case '\u00F7':
-                                                if (operand2 == 0)
-                                                {
-                                                    string st = infoLabel.Text;
-                                                    infoLabel.Text = "Impossibile dividere per 0";
-                                                    await Task.Delay(2000); // attesa di 2 secondi
-                                                    infoLabel.Text = st;
-                                                    return;
-                                                }
-                                                result = operand1 / operand2;
-                                                break;
-                                        }
-                                    }
-                                    catch (OverflowException)
+                                case '\u00F7':
+                                    if (operand2 == 0)
                                     {
                                         string st = infoLabel.Text;
-                                        infoLabel.Text = "Overflow";
+                                        infoLabel.Text = "Impossibile dividere per 0";
                                         await Task.Delay(2000); // attesa di 2 secondi
                                         infoLabel.Text = st;
                                         return;
                                     }
-                                }
-                                operand1 = result;
-                                resultLabel.Text = FormatNumber(result);
+                                    result = operand1 / operand2;
+                                    break;
                             }
+                        }
+                        catch (OverflowException)
+                        {
+                            string st = infoLabel.Text;
+                            infoLabel.Text = "Overflow";
+                            await Task.Delay(2000); // attesa di 2 secondi
+                            infoLabel.Text = st;
+                            return;
+                        }
+                    }
+                    operand1 = result;
+                    resultLabel.Text = FormatNumber(result);
+                }
             }
             if (clickedButtonStruct.Type == SymbolType.EqualSign)
             {
