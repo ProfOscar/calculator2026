@@ -206,10 +206,25 @@ namespace Calculator2026
                         resultLabel.Text += clickedButtonStruct.Content;
                     break;
                 case SymbolType.PlusMinusSign:
+                    if (resultLabel.Text == "0")
+                        return;   // lo zero non ha segno
                     if (!resultLabel.Text.Contains("-"))
                         resultLabel.Text = "-" + resultLabel.Text;
                     else
                         resultLabel.Text = resultLabel.Text.Substring(1);
+                    if (lastBtnStruct.Type == SymbolType.EqualSign)
+                    {
+                        // cambio segno al risultato: l'ultimo tasto resta "="
+                        operand1 = decimal.Parse(resultLabel.Text);
+                        result = operand1;
+                        return;
+                    }
+                    if (lastBtnStruct.Type == SymbolType.Operator || lastBtnStruct.Type == SymbolType.SpecialOperator)
+                    {
+                        // il numero col segno cambiato si comporta come il risultato di un'operazione speciale
+                        lastBtnStruct = new BtnStruct(clickedButtonStruct.Content, SymbolType.SpecialOperator);
+                        return;
+                    }
                     break;
                 case SymbolType.Backspace:
                     if (lastBtnStruct.Type == SymbolType.Operator || lastBtnStruct.Type == SymbolType.EqualSign
