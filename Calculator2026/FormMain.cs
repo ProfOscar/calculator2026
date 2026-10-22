@@ -78,8 +78,8 @@ namespace Calculator2026
                 Font = new Font("Segoe UI", 12, FontStyle.Regular),
                 TextAlign = ContentAlignment.MiddleRight,
                 AutoSize = false,
-                Location = new Point(-20, 0),
-                Size = new Size(this.Width, 34),
+                Location = new Point(0, 0),
+                Size = new Size(this.ClientSize.Width, 34),
                 BackColor = Color.Beige,
                 Text = ""
             };
@@ -93,8 +93,8 @@ namespace Calculator2026
                 Font = new Font("Segoe UI", 34, FontStyle.Bold),
                 TextAlign = ContentAlignment.MiddleRight,
                 AutoSize = false,
-                Location = new Point(-20, 34),
-                Size = new Size(this.Width, 66),
+                Location = new Point(0, 34),
+                Size = new Size(this.ClientSize.Width, 66),
                 BackColor = Color.Beige,
                 Text = "0"
             };
@@ -107,7 +107,9 @@ namespace Calculator2026
             if (resultLabel.Text.Length > 0)
             {
                 decimal num = decimal.Parse(resultLabel.Text);
-                NumberFormatInfo nfi = new CultureInfo("it-IT", false).NumberFormat;
+                // la cultura italiana è impostata in Program.cs: ne clono il formato
+                // (Clone serve perché quello della cultura corrente è di sola lettura)
+                NumberFormatInfo nfi = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
                 int decimalSeparatorPosition = resultLabel.Text.IndexOf(',');
                 if (decimalSeparatorPosition == -1)
                     nfi.NumberDecimalDigits = 0;
@@ -116,21 +118,21 @@ namespace Calculator2026
                 string stOut = num.ToString("N", nfi);
                 if (decimalSeparatorPosition == resultLabel.Text.Length - 1)
                     stOut += ",";
+                // questa assegnazione fa scattare di nuovo TextChanged: al secondo giro
+                // il testo è già formattato e non cambia, quindi l'evento non si ripete più
                 resultLabel.Text = stOut;
             }
 
-            if (resultLabel.Text.Length > 16)
-                resultLabel.Text = resultLabel.Text.Substring(0, 16);
-
+            float fontSize = 34;
             if (resultLabel.Text.Length > 11)
             {
                 float delta = (resultLabel.Text.Length - 11) * (float)2.8;
-                resultLabel.Font = new Font("Segoe UI", 34 - delta, FontStyle.Bold);
+                fontSize = 34 - delta;
+                if (fontSize < 10)
+                    fontSize = 10;
             }
-            else
-            {
-                resultLabel.Font = new Font("Segoe UI", 34, FontStyle.Bold);
-            }
+            if (resultLabel.Font.Size != fontSize)
+                resultLabel.Font = new Font("Segoe UI", fontSize, FontStyle.Bold);
         }
 
         private void MakeButtons()
@@ -186,9 +188,11 @@ namespace Calculator2026
                 case SymbolType.Number:
                     if (lastBtnStruct.Type == SymbolType.EqualSign)
                         ClearAll();
-                    if (resultLabel.Text == "0" || lastBtnStruct.Type == SymbolType.Operator)
+                    if (resultLabel.Text == "0" || lastBtnStruct.Type == SymbolType.Operator
+                        || lastBtnStruct.Type == SymbolType.SpecialOperator)
                         resultLabel.Text = "";
-                    resultLabel.Text += clickedButtonStruct.Content;
+                    if (resultLabel.Text.Replace(".", "").Replace(",", "").Replace("-", "").Length < 16)
+                        resultLabel.Text += clickedButtonStruct.Content;
                     break;
                 case SymbolType.Operator:
                 case SymbolType.EqualSign:
@@ -198,23 +202,48 @@ namespace Calculator2026
                     _ = ManageSpecialOperator(clickedButtonStruct);
                     break;
                 case SymbolType.DecimalPoint:
+                    if (lastBtnStruct.Type == SymbolType.EqualSign)
+                        ClearAll();
+                    if (lastBtnStruct.Type == SymbolType.Operator || lastBtnStruct.Type == SymbolType.SpecialOperator)
+                        resultLabel.Text = "0";
                     if (!resultLabel.Text.Contains(","))
                         resultLabel.Text += clickedButtonStruct.Content;
                     break;
                 case SymbolType.PlusMinusSign:
+                    if (resultLabel.Text == "0")
+                        return;   // lo zero non ha segno
                     if (!resultLabel.Text.Contains("-"))
                         resultLabel.Text = "-" + resultLabel.Text;
                     else
                         resultLabel.Text = resultLabel.Text.Substring(1);
+                    if (lastBtnStruct.Type == SymbolType.EqualSign)
+                    {
+                        // cambio segno al risultato: l'ultimo tasto resta "="
+                        operand1 = decimal.Parse(resultLabel.Text);
+                        result = operand1;
+                        return;
+                    }
+                    if (lastBtnStruct.Type == SymbolType.Operator || lastBtnStruct.Type == SymbolType.SpecialOperator)
+                    {
+                        // il numero col segno cambiato si comporta come il risultato di un'operazione speciale
+                        lastBtnStruct = new BtnStruct(clickedButtonStruct.Content, SymbolType.SpecialOperator);
+                        return;
+                    }
                     break;
                 case SymbolType.Backspace:
-                    resultLabel.Text = resultLabel.Text.Substring(0, resultLabel.Text.Length - 1);
-                    if (resultLabel.Text == "" || resultLabel.Text == "-" || resultLabel.Text == "-0")
-                        resultLabel.Text = "0";
+                    if (lastBtnStruct.Type == SymbolType.Operator || lastBtnStruct.Type == SymbolType.EqualSign
+                        || lastBtnStruct.Type == SymbolType.SpecialOperator)
+                        return;   // ignora il tasto: lastBtnStruct resta invariato
+                    string newText = resultLabel.Text.Substring(0, resultLabel.Text.Length - 1);
+                    if (newText == "" || newText == "-" || newText == "-0")
+                        newText = "0";
+                    resultLabel.Text = newText;
                     break;
                 case SymbolType.ClearEntry:
-                    // operand2 = 0;
-                    resultLabel.Text = "0";
+                    if (lastBtnStruct.Type == SymbolType.EqualSign)
+                        ClearAll();
+                    else
+                        resultLabel.Text = "0";
                     break;
                 case SymbolType.ClearAll:
                     ClearAll();
@@ -237,9 +266,15 @@ namespace Calculator2026
             resultLabel.Text = "0";
         }
 
+        private string FormatNumber(decimal number)
+        {
+            // arrotonda a 10 decimali ed elimina gli zeri finali
+            return Math.Round(number, 10).ToString("0.##########");
+        }
+
         private async Task ManageSpecialOperator(BtnStruct clickedButtonStruct)
         {
-            if (lastOperator == ' ')
+            if (lastOperator == ' ' || lastBtnStruct.Type == SymbolType.EqualSign)
             {
                 infoLabel.Text = "";
             }
@@ -257,8 +292,11 @@ namespace Calculator2026
                         case '\u00F7':
                             operand2 = operand2 / 100;
                             break;
+                        default:
+                            operand2 = 0;
+                            break;
                     }
-                    infoLabel.Text += $" {operand2}";
+                    infoLabel.Text += $" {FormatNumber(operand2)}";
                     break;
                 case '\u215F':
                     // 1 diviso x
@@ -272,14 +310,26 @@ namespace Calculator2026
                     }
                     else
                     {
-                        infoLabel.Text += $" 1/{operand2}";
+                        infoLabel.Text += $" 1/{FormatNumber(operand2)}";
                         operand2 = 1 / operand2;
                     }
                     break;
                 case '\u00B2':
                     // x quadro
-                    infoLabel.Text += $" sqr({operand2})";
-                    operand2 = operand2 * operand2;
+                    try
+                    {
+                        decimal square = operand2 * operand2;
+                        infoLabel.Text += $" sqr({FormatNumber(operand2)})";
+                        operand2 = square;
+                    }
+                    catch (OverflowException)
+                    {
+                        string st = infoLabel.Text;
+                        infoLabel.Text = "Overflow";
+                        await Task.Delay(2000); // attesa di 2 secondi
+                        infoLabel.Text = st;
+                        return;
+                    }
                     break;
                 case '\u221A':
                     // radice di x
@@ -293,18 +343,18 @@ namespace Calculator2026
                     }
                     else
                     {
-                        infoLabel.Text += $" \u221A({operand2})";
+                        infoLabel.Text += $" \u221A({FormatNumber(operand2)})";
                         operand2 = (decimal)Math.Sqrt((double)operand2);
                     }
                     break;
             }
-            resultLabel.Text = operand2.ToString();
+            resultLabel.Text = FormatNumber(operand2);
         }
 
         private async Task ManageOperator(BtnStruct clickedButtonStruct)
         {
             decimal lastOperand1 = operand1;
-            if (lastBtnStruct.Type != SymbolType.Operator)
+            if (lastBtnStruct.Type != SymbolType.Operator || clickedButtonStruct.Type == SymbolType.EqualSign)
             {
                 if (lastOperator == ' ')
                 {
@@ -319,42 +369,56 @@ namespace Calculator2026
                     {
                         // non schiaccio operator subito dopo aver schiacciato uguale
                         // devo svolgere l'operazione che ho in coda
-                        switch (lastOperator)
+                        try
                         {
-                            case '+':
-                                result = operand1 + operand2;
-                                break;
-                            case '-':
-                                result = operand1 - operand2;
-                                break;
-                            case 'x':
-                                result = operand1 * operand2;
-                                break;
-                            case '\u00F7':
-                                if (operand2 == 0)
-                                {
-                                    string st = infoLabel.Text;
-                                    infoLabel.Text = "Impossibile dividere per 0";
-                                    await Task.Delay(2000); // attesa di 2 secondi
-                                    infoLabel.Text = st;
-                                    return;
-                                }
-                                result = operand1 / operand2;
-                                break;
+                            switch (lastOperator)
+                            {
+                                case '+':
+                                    result = operand1 + operand2;
+                                    break;
+                                case '-':
+                                    result = operand1 - operand2;
+                                    break;
+                                case 'x':
+                                    result = operand1 * operand2;
+                                    break;
+                                case '\u00F7':
+                                    if (operand2 == 0)
+                                    {
+                                        string st = infoLabel.Text;
+                                        infoLabel.Text = "Impossibile dividere per 0";
+                                        await Task.Delay(2000); // attesa di 2 secondi
+                                        infoLabel.Text = st;
+                                        return;
+                                    }
+                                    result = operand1 / operand2;
+                                    break;
+                            }
+                        }
+                        catch (OverflowException)
+                        {
+                            string st = infoLabel.Text;
+                            infoLabel.Text = "Overflow";
+                            await Task.Delay(2000); // attesa di 2 secondi
+                            infoLabel.Text = st;
+                            return;
                         }
                     }
                     operand1 = result;
-                    resultLabel.Text = result.ToString();
+                    resultLabel.Text = FormatNumber(result);
                 }
             }
             if (clickedButtonStruct.Type == SymbolType.EqualSign)
             {
-                infoLabel.Text = $"{lastOperand1} {lastOperator} {operand2} =";
+                if (lastOperator == ' ')
+                    infoLabel.Text = $"{FormatNumber(operand1)} =";
+                else
+                    infoLabel.Text = $"{FormatNumber(lastOperand1)} {lastOperator} {FormatNumber(operand2)} =";
             }
             else
             {
                 lastOperator = clickedButtonStruct.Content;
-                infoLabel.Text = $"{operand1} {lastOperator}";
+                infoLabel.Text = $"{FormatNumber(operand1)} {lastOperator}";
             }
         }
     }

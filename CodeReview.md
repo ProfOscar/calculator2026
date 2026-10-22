@@ -143,6 +143,71 @@ In Windows, `50 %` senza un operatore prima dà `0`. Qui il numero resta invariat
 
 ---
 
+## ?? Problemi del tasto ± (seconda revisione)
+
+Il caso `PlusMinusSign` cambia solo il testo dell'etichetta e poi aggiorna `lastBtnStruct`. Così "perde" lo stato in cui si trovava la calcolatrice (dopo `=`, dopo un operatore, dopo un'operazione speciale) e il tasto premuto subito dopo si comporta in modo sbagliato.
+
+### 10. `±` dopo `=` produce un risultato sbagliato
+Sequenza `6 x 4 = ± =`:
+- dopo `=`: `operand1 = 24`, `operand2 = 4`;
+- `±` porta l'etichetta a `-24`, ma l'ultimo tasto diventa `±`;
+- al secondo `=` il programma pensa che sia stato digitato un nuovo numero, rilegge `operand2 = -24` e calcola `24 x -24 = -576`.
+
+Windows dà invece `-24 x 4 = -96`: cambia segno al risultato e ripete l'ultima operazione.
+
+C'è un effetto simile con `6 x 4 = ± +`: in fondo a `ManageOperator`, `operand1` riprende il vecchio `result` (`24`), quindi il cambio di segno va perso.
+
+### 11. `±` dopo un operatore o un'operazione speciale fa accodare le cifre
+- `5 + ± 3` mostra `-53` invece di `3`;
+- `9 ? ± 5` mostra `-35` invece di `5`.
+
+Il motivo è che l'ultimo tasto non è più l'operatore o l'operazione speciale, quindi la regola "la cifra sostituisce il numero" non scatta.
+
+### 12. `±` su zero mostra `-0`
+Premendo `±` con l'etichetta a `0` compare `-0`. Windows lascia `0`.
+
+### Soluzione (unica per i tre punti)
+L'idea è semplice: dopo `=`, `±` cambia segno anche a `operand1` e a `result` e "finge" di non essere stato premuto, cioè l'ultimo tasto resta `=`. Dopo un operatore o un'operazione speciale, invece, il nuovo numero si comporta come il risultato di un'operazione speciale.
+```diff
+ case SymbolType.PlusMinusSign:
++    if (resultLabel.Text == "0")
++        return;   // lo zero non ha segno
+     if (!resultLabel.Text.Contains("-"))
+         resultLabel.Text = "-" + resultLabel.Text;
+     else
+         resultLabel.Text = resultLabel.Text.Substring(1);
++    if (lastBtnStruct.Type == SymbolType.EqualSign)
++    {
++        // cambio segno al risultato: l'ultimo tasto resta "="
++        operand1 = decimal.Parse(resultLabel.Text);
++        result = operand1;
++        return;
++    }
++    if (lastBtnStruct.Type == SymbolType.Operator || lastBtnStruct.Type == SymbolType.SpecialOperator)
++    {
++        // il numero col segno cambiato si comporta come il risultato di un'operazione speciale
++        lastBtnStruct = new BtnStruct(clickedButtonStruct.Content, SymbolType.SpecialOperator);
++        return;
++    }
+     break;
+```
+Comportamento atteso dopo la correzione:
+
+| Sequenza | Atteso |
+|---|---|
+| `6 x 4 = ± =` | `-96` |
+| `6 x 4 = ± + 1 =` | `-23` |
+| `6 x 4 = ± 7` | `7` (nuovo calcolo) |
+| `5 + ± =` | `0` (`5 + -5`) |
+| `5 + ± 3 =` | `8` |
+| `9 ? ± 5` | `5` |
+| `0 ±` | `0` |
+| `5 ± ± 3` | `53` (digitazione normale, invariata) |
+
+Nota: Windows scriverebbe anche `negate(...)` nell'etichetta in alto. Per non complicare il codice questa parte non è inclusa.
+
+---
+
 ## Ordine consigliato per le correzioni
 1. Punto **2** (lingua del PC): serve anche per gli altri punti.
 2. Punti **1, 3, 4, 5**: sono i bug che gli studenti noteranno subito usando la calcolatrice.
